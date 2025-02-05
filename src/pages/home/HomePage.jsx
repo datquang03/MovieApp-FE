@@ -1,11 +1,19 @@
-import Navbar from "../../components/navbar/Navbar";
-import mainbg2 from "../../../assets/mainbg2.png";
+import Layout from "../../components/layout/layout";
+import Banners from "./components/Banners";
+import PopularMovies from "./components/PopularMovies";
+import Promos from "./components/Promos";
+import TopRatedMovies from "./components/TopRatedMovies";
+
 const HomePage = () => {
   return (
-    <div className="h-full max-w-full">
-      <img src={mainbg2} alt="image" className="object-cover w-full h-full" />
-      <Navbar />
-    </div>
+    <Layout>
+      <div className="container mx-auto min-h-screen px-2 mb-6 ">
+        <Banners />
+        <PopularMovies />
+        <Promos />
+        <TopRatedMovies />
+      </div>
+    </Layout>
   );
 };
 

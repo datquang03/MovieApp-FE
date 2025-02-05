@@ -1,0 +1,27 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 200 200"
+  width="200"
+  height="200"
+>
+  <!-- Nền tròn viền trắng -->
+  <circle cx="100" cy="100" r="90" fill="white" stroke="white" stroke-width="10"/>
+
+  <!-- Mái nhà -->
+  <polygon points="30,90 100,30 170,90" fill="#52A9DA"/>
+
+  <!-- Thân nhà dạng cuộn phim -->
+  <rect x="55" y="90" width="90" height="80" fill="#52A9DA"/>
+
+  <!-- Lỗ phim bên trái -->
+  <rect x="55" y="100" width="10" height="10" fill="white"/>
+  <rect x="55" y="120" width="10" height="10" fill="white"/>
+  <rect x="55" y="140" width="10" height="10" fill="white"/>
+  <rect x="55" y="160" width="10" height="10" fill="white"/>
+
+  <!-- Lỗ phim bên phải -->
+  <rect x="135" y="100" width="10" height="10" fill="white"/>
+  <rect x="135" y="120" width="10" height="10" fill="white"/>
+  <rect x="135" y="140" width="10" height="10" fill="white"/>
+  <rect x="135" y="160" width="10" height="10" fill="white"/>
+</svg>
