@@ -5,12 +5,13 @@ import { FaUser, FaHeart } from "react-icons/fa6";
 
 const Navbar = () => {
   const hover =
-    "hover:text-subMain transition duration-500 ease-in-out text-white text-xl pr-2";
-  const Hover = ({ isActive }) => (isActive ? "hover:text-subMain" : hover);
+    "hover:text-subMain transition duration-500 ease-in-out text-white text-xl pr-2 ";
+  const Hover = ({ isActive }) =>
+    isActive ? "text-subMain transition duration-500 ease-in-out" : hover;
   const navigate = useNavigate();
   return (
     <div className="bg-main shadow-md sticky top-0 z-20">
-      <div className="container mx-auto py-6 px-2 lg:grid grid-cols-7 gap-10 justify-between items-center">
+      <div className="container mx-auto py-2 px-2 lg:grid grid-cols-7 gap-10 justify-between items-center">
         <div className="col-span-1 lg:block hidden">
           <img
             onClick={() => navigate("/")}
