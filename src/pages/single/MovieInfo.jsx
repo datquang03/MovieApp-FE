@@ -1,5 +1,7 @@
 import { FaShareAlt } from "react-icons/fa";
 import FlexMovieItems from "../../components/FlexMovieItems";
+import { FaPlay } from "react-icons/fa6";
+import { Link } from "react-router-dom";
 
 /* eslint-disable react/prop-types */
 const MovieInfo = ({ movie }) => {
