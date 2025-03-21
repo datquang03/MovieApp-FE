@@ -1,13 +1,25 @@
-import { logoutAction } from "./action/user.action";
+import { loginAction } from "../redux/action/user.action";
 
 export const ErrorsAction = (error, dispatch, action) => {
   const message =
-    error.response && error.response.data.message
+    error.message && error.response.data.message
       ? error.response.data.message
       : error.message;
-  if (message === "Not authorized, token failed") {
-    // we logout if token failed
-    dispatch(logoutAction());
+  if (message === "Not authorized, Token Failed") {
+    //   dispatch({ type: userContants.USER_LOGOUT });
+    dispatch(loginAction({}));
   }
-  dispatch({ type: action, payload: message });
+  return dispatch({ type: action, payload: message });
+};
+
+// api token to protect
+export const tokenProtection = (getState) => {
+  const {
+    userLogin: { userInfo },
+  } = getState();
+  if (!userInfo?.token) {
+    return null;
+  } else {
+    return userInfo?.token;
+  }
 };

@@ -1,50 +1,47 @@
-import { Fragment, useState } from "react";
-import { CategoriesData } from "../../data/categories.db";
+/* eslint-disable react/prop-types */
+import { Fragment } from "react";
 import { Listbox, Transition } from "@headlessui/react";
 import { CgSelect } from "react-icons/cg";
 import { HiOutlineCheck } from "react-icons/hi";
-
-const yearData = [
-  { title: "Sort by year" },
-  { title: "1900-1920" },
-  { title: "1920-1940" },
-  { title: "1940-1960" },
-  { title: "1960-1980" },
-  { title: "1980-2000" },
-];
-
-const timeData = [
-  { title: "Sort by time" },
-  { title: "1h -2h" },
-  { title: "2h -3h" },
-  { title: "3h -4h" },
-  { title: "4h -5h" },
-];
-
-const rateData = [
-  { title: "Sort by rates" },
-  { title: "1 star" },
-  { title: "2 stars" },
-  { title: "3 stars" },
-  { title: "4 stars" },
-  { title: "5 stars" },
-];
-
-const Filters = () => {
-  const [category, setCategory] = useState({ title: "Category" });
-  const [year, setYear] = useState(yearData[0]);
-  const [rate, setRate] = useState(rateData[0]);
-  const [time, setTime] = useState(timeData[0]);
+import {
+  languageData,
+  rateData,
+  timeData,
+  yearData,
+} from "../../data/filters.db";
+const Filters = (props) => {
+  const {
+    categories,
+    category,
+    setCategory,
+    language,
+    setLanguage,
+    year,
+    setYear,
+    rate,
+    setRate,
+    time,
+    setTime,
+    // eslint-disable-next-line no-unsafe-optional-chaining
+  } = props?.data;
 
   const Filter = [
-    { value: category, onChange: setCategory, items: CategoriesData || [] },
+    {
+      value: category,
+      onChange: setCategory,
+      items:
+        categories?.length > 0
+          ? [{ title: "All Categories" }]
+          : [{ title: "Categories not found" }],
+    },
+    { value: language, onChange: setLanguage, items: languageData },
     { value: year, onChange: setYear, items: yearData },
     { value: rate, onChange: setRate, items: rateData },
     { value: time, onChange: setTime, items: timeData },
   ];
 
   return (
-    <div className="my-6 bg-dry border text-dryGray border-gray-800 grid md:grid-cols-4 grid-cols-2 lg:gap-12 rounded p-6">
+    <div className="my-6 bg-dry border text-dryGray border-gray-800 grid md:grid-cols-5 grid-cols-2 lg:gap-12 rounded p-6">
       {Filter.map((item, index) => (
         <Listbox key={index} value={item.value} onChange={item.onChange}>
           <div className="relative">
