@@ -12,21 +12,25 @@ const Uploader = ({ setImageUrl }) => {
     formData.append("image", file);
 
     try {
-      const res = await fetch(
+      const response = await fetch(
         "https://movie-app-be-lac.vercel.app/api/upload",
         {
           method: "POST",
           body: formData,
         }
       );
-      const data = await res.json();
-      return data.imageUrl; // Trả về URL ảnh từ server
+      if (!response.ok) {
+        const errorData = await response.text(); // Lấy text nếu không phải JSON
+        throw new Error(`Server error: ${response.status} - ${errorData}`);
+      }
+      const data = await response.json();
+      console.log("Uploaded:", data.imageUrl);
+      return data.imageUrl;
     } catch (error) {
       console.error("Upload failed:", error);
-      return null;
+      return null; // Hoặc xử lý theo cách khác
     }
   };
-
   const onDrop = useCallback(
     async (acceptedFiles) => {
       const file = acceptedFiles[0];
