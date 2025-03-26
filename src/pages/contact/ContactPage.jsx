@@ -2,7 +2,7 @@ import { IoMail } from "react-icons/io5";
 import { FaPhoneAlt } from "react-icons/fa";
 import { FaLocationPin } from "react-icons/fa6";
 import Head from "../../components/Head";
-import Layout from "../../components/layout/layout";
+import Layout from "../../components/layout/Layout";
 
 const ContactPage = () => {
   const contactData = [
