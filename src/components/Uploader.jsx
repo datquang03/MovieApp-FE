@@ -12,10 +12,13 @@ const Uploader = ({ setImageUrl }) => {
     formData.append("image", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://movie-app-be-lac.vercel.app/api/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
       const data = await res.json();
       return data.imageUrl; // Trả về URL ảnh từ server
     } catch (error) {
