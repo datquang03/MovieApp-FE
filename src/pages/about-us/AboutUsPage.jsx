@@ -1,5 +1,5 @@
 import Head from "../../components/Head";
-import Layout from "../../components/layout/layout";
+import Layout from "../../components/layout/Layout";
 import bg1 from "/assets/bg1.jpg";
 const AboutUsPage = () => {
   return (
