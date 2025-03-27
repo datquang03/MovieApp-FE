@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
@@ -9,26 +9,18 @@ import { getAllUsersAction } from "../../../redux/action/user.action";
 import Sidebar from "../../dashboard/Sidebar";
 import { FaPaperPlane, FaSmile } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
-import io from "socket.io-client";
-
-// Khởi tạo kết nối WebSocket
-const socket = io("http://localhost:5000", {
-  reconnection: true,
-});
 
 const MessagePage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [messages, setMessages] = useState([]);
-  const messagesContainerRef = useRef(null); // Ref cho box tin nhắn
   const { id } = useParams();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
   const {
     isLoading,
     isError,
-    messages: reduxMessages = [],
+    messages = [],
   } = useSelector((state) => state.getMessageById);
   const {
     isLoading: usersLoading,
@@ -36,15 +28,6 @@ const MessagePage = () => {
     users = [],
   } = useSelector((state) => state.adminGetAllUsers);
 
-  // Cuộn xuống dưới trong box tin nhắn
-  const scrollToBottom = () => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      container.scrollTop = container.scrollHeight; // Cuộn xuống dưới trong container
-    }
-  };
-
-  // Lấy tin nhắn ban đầu từ Redux
   useEffect(() => {
     if (userInfo?.isAdmin) {
       dispatch(getAllUsersAction());
@@ -59,40 +42,9 @@ const MessagePage = () => {
     }
   }, [dispatch, selectedUser, userInfo]);
 
-  // Đồng bộ tin nhắn từ Redux (không cuộn tự động)
-  useEffect(() => {
-    setMessages(reduxMessages);
-    // Không gọi scrollToBottom ở đây để tránh cuộn khi vào trang
-  }, [reduxMessages]);
-
-  // Thiết lập WebSocket
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("Connected to WebSocket server");
-      socket.emit("join", userInfo?._id);
-    });
-
-    socket.on("receive_message", (message) => {
-      console.log("Received message from WebSocket:", message);
-      setMessages((prevMessages) => {
-        if (!prevMessages.some((msg) => msg._id === message._id)) {
-          return [...prevMessages, message];
-        }
-        return prevMessages;
-      });
-      scrollToBottom(); // Chỉ cuộn khi nhận tin nhắn mới
-    });
-
-    return () => {
-      socket.off("receive_message");
-      socket.off("connect");
-    };
-  }, [userInfo]);
-
   const handleSelectUser = (userId) => {
     console.log("Selected user ID:", userId);
     setSelectedUser(userId);
-    // Không reset messages, để Redux đồng bộ
   };
 
   const handleSendMessage = () => {
@@ -102,19 +54,10 @@ const MessagePage = () => {
       console.log("No target user selected");
       return;
     }
-
-    const messageData = {
-      senderId: userInfo._id,
-      receiverId: targetId,
-      message: newMessage,
-      createdAt: new Date(),
-    };
-
-    socket.emit("send_message", messageData);
     dispatch(sendMessageAction(targetId, newMessage)).then(() => {
+      dispatch(getMessagesByIdAction(targetId));
       setNewMessage("");
       setShowEmojiPicker(false);
-      scrollToBottom(); // Chỉ cuộn khi gửi tin nhắn
     });
   };
 
@@ -163,10 +106,7 @@ const MessagePage = () => {
 
         <div className="flex-1 flex flex-col gap-6 p-4">
           <h2 className="text-xl font-bold text-white">Messages</h2>
-          <div
-            ref={messagesContainerRef} // Gán ref cho box tin nhắn
-            className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] p-4 bg-gray-800 rounded-lg"
-          >
+          <div className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] p-4 bg-gray-800 rounded-lg">
             {isLoading ? (
               <p className="text-white text-center">Loading...</p>
             ) : isError ? (
@@ -178,36 +118,23 @@ const MessagePage = () => {
             ) : messages.length > 0 ? (
               messages.map((data) => (
                 <div
-                  key={data._id || `${data.senderId}-${data.createdAt}`}
+                  key={data._id}
                   className={`flex ${
-                    (typeof data.senderId === "object"
-                      ? data.senderId._id
-                      : data.senderId) === userInfo._id
+                    data.senderId._id === userInfo._id
                       ? "justify-end"
                       : "justify-start"
                   } mb-4`}
                 >
                   <div className="flex items-start max-w-[70%]">
                     <img
-                      src={
-                        typeof data.senderId === "object" && data.senderId.image
-                          ? data.senderId.image
-                          : "/default-avatar.png"
-                      }
-                      alt={
-                        typeof data.senderId === "object" &&
-                        data.senderId.fullName
-                          ? data.senderId.fullName
-                          : "User"
-                      }
+                      src={data.senderId.image || "/default-avatar.png"}
+                      alt={data.senderId.fullName || "User"}
                       className="w-8 h-8 rounded-full object-cover mr-2 mt-1"
                     />
                     <div>
                       <div
                         className={`p-3 rounded-lg ${
-                          (typeof data.senderId === "object"
-                            ? data.senderId._id
-                            : data.senderId) === userInfo._id
+                          data.senderId._id === userInfo._id
                             ? "bg-blue-500 text-white"
                             : "bg-gray-600 text-white"
                         }`}
@@ -215,7 +142,7 @@ const MessagePage = () => {
                         <p>{data.message}</p>
                       </div>
                       <p className="text-xs text-gray-400 mt-1 text-right">
-                        {formatTime(data.createdAt || Date.now())}
+                        {formatTime(data.createdAt)}
                       </p>
                     </div>
                   </div>
