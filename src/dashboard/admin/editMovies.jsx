@@ -1,6 +1,6 @@
 import { MdDelete } from "react-icons/md";
 import userImg from "/assets/userImg.jpg";
-import Uploader from "../../components/Uploader";
+// import Uploader from "../../components/Uploader";
 import { Input, Message, Select } from "../../components/userInput/userInput";
 import Sidebar from "../Sidebar";
 import { FaEdit } from "react-icons/fa";
@@ -20,7 +20,7 @@ import {
 import toast from "react-hot-toast";
 import { MOVIE_UPDATE_RESET } from "../../../redux/constant/movie.constant";
 import { InlineError } from "../../components/notifications/Error";
-import { ImageMoviePreview } from "../../components/ImageMoviePreview";
+// import { ImageMoviePreview } from "../../components/ImageMoviePreview";
 import Loader from "../../components/notifications/Loader";
 import { RiMovie2Line } from "react-icons/ri";
 const EditMovie = () => {
@@ -208,8 +208,8 @@ const EditMovie = () => {
               <p className="text-border font-semibold text-sm">
                 Image with title
               </p>
-              <Uploader setImageUrl={setImageUrl} />
-              <ImageMoviePreview image={imageUrl} name={"Image with title"} />
+              {/* <Uploader setImageUrl={setImageUrl} />
+              <ImageMoviePreview image={imageUrl} name={"Image with title"} /> */}
             </div>
           </div>
           {/* DESCRIPTION */}

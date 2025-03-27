@@ -24,12 +24,23 @@ const WatchPage = () => {
   );
   const { userInfo } = useSelector((state) => state.userLogin);
 
-  // if like function
   const isLiked = IfLikedMovies(movie);
 
   useEffect(() => {
     dispatch(getMovieByIdAction(id));
   }, [dispatch, id]);
+
+  // Hàm trích xuất video ID từ URL YouTube
+  const getYouTubeVideoId = (url) => {
+    if (!url) return null;
+    const regex =
+      // eslint-disable-next-line no-useless-escape
+      /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
+  const videoId = movie ? getYouTubeVideoId(movie.video) : null;
 
   return (
     <Layout>
@@ -40,7 +51,7 @@ const WatchPage = () => {
             className="md:text-xl text-sm flex gap-3 items-center font-bold text-dryGray"
           >
             <BiArrowBack className="size-5" />
-            {movie?.name}
+            {movie?.name || "Loading..."}
           </Link>
           <div className="flex items-center justify-between sm:w-auto w-full gap-5">
             <button
@@ -52,15 +63,13 @@ const WatchPage = () => {
             </button>
           </div>
         </div>
-        {/* watch video */}
-        {play ? (
+        {/* Watch video */}
+        {play && videoId ? (
           <div className="w-full h-screen rounded-lg overflow-hidden relative">
             <iframe
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${
-                movie.video.split("youtu.be/")[1]
-              }?autoplay=1`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
               title={movie?.name}
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -80,6 +89,10 @@ const WatchPage = () => {
                   <RiMovie2Line />
                 </div>
                 <p className="text-border text-sm">{isError}</p>
+              </div>
+            ) : !movie ? (
+              <div className={sameClass}>
+                <p className="text-border text-sm">Movie not found</p>
               </div>
             ) : (
               <>

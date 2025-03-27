@@ -1,6 +1,6 @@
 import axios from "axios";
 const axiosClient = axios.create({
-  baseURL: "http://localhost:5000/  ",
+  baseURL: "https://movie-app-be-lac.vercel.app/api",
   headers: {
     "Content-Type": "application/json",
   },
