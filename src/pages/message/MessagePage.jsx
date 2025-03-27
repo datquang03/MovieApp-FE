@@ -32,25 +32,29 @@ const MessagePage = () => {
     isLoading: usersLoading,
     isError: usersError,
     users = [],
-  } = useSelector((state) => state.adminGetAllUsers); // Thêm selector cho users
+  } = useSelector((state) => state.adminGetAllUsers);
 
   useEffect(() => {
     if (userInfo?.isAdmin) {
       dispatch(getAllMessagesForAdminAction());
       dispatch(getAllUsersAction());
+      if (selectedUser) {
+        dispatch(getMessagesByIdAction(selectedUser)); // Tự động lấy tin nhắn khi selectedUser thay đổi
+      }
     } else if (id) {
-      dispatch(getMessagesByIdAction(id));
+      dispatch(getMessagesByIdAction(id)); // Cho user thường
     }
-  }, [dispatch, id, userInfo]);
+  }, [dispatch, id, userInfo, selectedUser]); // Thêm selectedUser vào dependency
 
   const handleSelectUser = (userId) => {
+    console.log("Selected user ID:", userId);
     setSelectedUser(userId);
     dispatch(getMessagesByIdAction(userId));
   };
 
   const handleSendMessage = () => {
     if (newMessage.trim() === "") return;
-    const targetId = userInfo?.isAdmin ? selectedUser : id;
+    const targetId = userInfo?.isAdmin ? selectedUser : id; // Admin dùng selectedUser, user thường dùng id
     if (!targetId) {
       console.log("No target user selected");
       return;
@@ -80,7 +84,6 @@ const MessagePage = () => {
   const allMessages =
     userInfo?.isAdmin && !selectedUser ? adminMessages : messages;
 
-  // Lọc user, loại bỏ admin hiện tại
   const filteredUsers = users.filter((user) => user._id !== userInfo?._id);
 
   return (

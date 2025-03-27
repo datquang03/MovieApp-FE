@@ -74,7 +74,7 @@ const Sidebar = ({ children }) => {
         },
         {
           name: "Message",
-          link: `/message/${adminId}`,
+          link: `/message`,
           icon: MdMessage,
         },
       ]
