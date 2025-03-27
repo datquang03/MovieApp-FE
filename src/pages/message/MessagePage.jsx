@@ -92,10 +92,15 @@ const MessagePage = () => {
               filteredUsers.map((user) => (
                 <div
                   key={user._id}
-                  className="p-3 cursor-pointer bg-gray-700 text-white rounded-lg mb-2 hover:bg-gray-600 transition-colors"
+                  className="p-3 cursor-pointer bg-gray-700 text-white rounded-lg mb-2 hover:bg-gray-600 transition-colors flex items-center gap-2"
                   onClick={() => handleSelectUser(user._id)}
                 >
-                  {user.fullName || "Unknown User"}
+                  <img
+                    src={user.image || "/default-avatar.png"}
+                    alt={user.fullName || "User"}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                  <span>{user.fullName || "Unknown User"}</span>
                 </div>
               ))
             ) : (
