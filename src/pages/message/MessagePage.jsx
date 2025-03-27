@@ -7,28 +7,27 @@ import {
   sendMessageAction,
 } from "../../../redux/action/message.action";
 import Sidebar from "../../dashboard/Sidebar";
-import { FaPaperPlane, FaSmile } from "react-icons/fa"; // Thêm FaSmile cho nút emoji
-import EmojiPicker from "emoji-picker-react"; // Thêm thư viện emoji-picker-react
+import { FaPaperPlane, FaSmile } from "react-icons/fa";
+import EmojiPicker from "emoji-picker-react";
 
 const MessagePage = () => {
-  const [newMessage, setNewMessage] = useState(""); // Nội dung tin nhắn
-  const [selectedUser, setSelectedUser] = useState(null); // Người dùng được chọn
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false); // Hiển thị/ẩn emoji picker
-  const { id } = useParams(); // Lấy id từ URL
+  const [newMessage, setNewMessage] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const { id } = useParams();
   const dispatch = useDispatch();
-  const { userInfo } = useSelector((state) => state.userLogin); // Thông tin user từ Redux
+  const { userInfo } = useSelector((state) => state.userLogin);
   const {
     isLoading: adminLoading,
     isError: adminError,
     messages: adminMessages = [],
-  } = useSelector((state) => state.getMessageForAdmin) || {}; // Tin nhắn admin từ Redux
+  } = useSelector((state) => state.getMessageForAdmin) || {};
   const {
     isLoading,
     isError,
     messages = [],
-  } = useSelector((state) => state.getMessageById); // Tin nhắn user từ Redux
+  } = useSelector((state) => state.getMessageById);
 
-  // Tải dữ liệu tin nhắn khi component mount hoặc thay đổi userInfo/id
   useEffect(() => {
     if (userInfo?.isAdmin) {
       dispatch(getAllMessagesForAdminAction());
@@ -37,35 +36,33 @@ const MessagePage = () => {
     }
   }, [dispatch, id, userInfo]);
 
-  // Chọn người dùng để xem tin nhắn
   const handleSelectUser = (userId) => {
     setSelectedUser(userId);
     dispatch(getMessagesByIdAction(userId));
   };
 
-  // Gửi tin nhắn
   const handleSendMessage = () => {
     if (newMessage.trim() === "") return;
-    dispatch(sendMessageAction(selectedUser || id, newMessage)).then(() => {
-      dispatch(getMessagesByIdAction(selectedUser || id)); // Cập nhật tin nhắn sau khi gửi
-      setNewMessage(""); // Xóa input
-      setShowEmojiPicker(false); // Ẩn emoji picker
+    const targetId = userInfo?.isAdmin ? selectedUser : id;
+    if (!targetId) {
+      console.log("No target user selected");
+      return;
+    }
+    dispatch(sendMessageAction(targetId, newMessage)).then(() => {
+      dispatch(getMessagesByIdAction(targetId));
+      setNewMessage("");
+      setShowEmojiPicker(false);
     });
   };
 
-  // Gửi tin nhắn khi nhấn Enter
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSendMessage();
-    }
+    if (e.key === "Enter") handleSendMessage();
   };
 
-  // Thêm emoji vào tin nhắn
   const handleEmojiClick = (emojiObject) => {
     setNewMessage((prev) => prev + emojiObject.emoji);
   };
 
-  // Định dạng thời gian
   const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString([], {
       hour: "2-digit",
@@ -73,11 +70,9 @@ const MessagePage = () => {
     });
   };
 
-  // Danh sách tin nhắn hiển thị
   const allMessages =
     userInfo?.isAdmin && !selectedUser ? adminMessages : messages;
 
-  // Danh sách người dùng trong sidebar (loại bỏ admin)
   const filteredUsers = [
     ...new Set(
       adminMessages
@@ -89,7 +84,6 @@ const MessagePage = () => {
   return (
     <Sidebar>
       <div className="flex h-full">
-        {/* Sidebar hiển thị danh sách người dùng (cho admin) */}
         {userInfo?.isAdmin && (
           <div className="w-1/3 bg-gray-800 p-4 overflow-y-auto">
             <h2 className="text-xl font-bold text-white mb-4">Users</h2>
@@ -114,7 +108,6 @@ const MessagePage = () => {
           </div>
         )}
 
-        {/* Khu vực hiển thị tin nhắn */}
         <div className="flex-1 flex flex-col gap-6 p-4">
           <h2 className="text-xl font-bold text-white">Messages</h2>
           <div className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] p-4 bg-gray-800 rounded-lg">
@@ -162,7 +155,6 @@ const MessagePage = () => {
             )}
           </div>
 
-          {/* Input gửi tin nhắn */}
           <div className="mt-4 flex items-center relative">
             <input
               type="text"
@@ -170,9 +162,8 @@ const MessagePage = () => {
               placeholder="Type a message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress} // Gửi khi nhấn Enter
+              onKeyPress={handleKeyPress}
             />
-            {/* Nút mở Emoji Picker */}
             <button
               type="button"
               className="p-3 bg-gray-600 text-white hover:bg-gray-500 transition-colors"
@@ -180,15 +171,13 @@ const MessagePage = () => {
             >
               <FaSmile />
             </button>
-            {/* Nút gửi tin nhắn */}
             <button
               className="p-3 rounded-r-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
               onClick={handleSendMessage}
-              disabled={!selectedUser && userInfo?.isAdmin}
+              disabled={!selectedUser && userInfo?.isAdmin && !id}
             >
               <FaPaperPlane />
             </button>
-            {/* Emoji Picker */}
             {showEmojiPicker && (
               <div className="absolute bottom-14 right-0 z-10">
                 <EmojiPicker onEmojiClick={handleEmojiClick} />
