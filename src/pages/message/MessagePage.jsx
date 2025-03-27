@@ -13,15 +13,15 @@ import io from "socket.io-client";
 
 // Khởi tạo kết nối WebSocket
 const socket = io("http://localhost:5000", {
-  reconnection: true, // Tự động kết nối lại nếu mất kết nối
+  reconnection: true,
 });
 
 const MessagePage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [messages, setMessages] = useState([]); // Quản lý tin nhắn local (Redux + real-time)
-  const messagesEndRef = useRef(null); // Để tự động cuộn xuống tin nhắn mới nhất
+  const [messages, setMessages] = useState([]);
+  const messagesEndRef = useRef(null);
   const { id } = useParams();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -36,12 +36,10 @@ const MessagePage = () => {
     users = [],
   } = useSelector((state) => state.adminGetAllUsers);
 
-  // Tự động cuộn xuống tin nhắn mới nhất
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Lấy tin nhắn ban đầu từ Redux
   useEffect(() => {
     if (userInfo?.isAdmin) {
       dispatch(getAllUsersAction());
@@ -56,27 +54,31 @@ const MessagePage = () => {
     }
   }, [dispatch, selectedUser, userInfo]);
 
-  // Đồng bộ tin nhắn từ Redux với state local
+  // Đồng bộ tin nhắn từ Redux
   useEffect(() => {
     setMessages(reduxMessages);
+    scrollToBottom();
   }, [reduxMessages]);
 
   // Thiết lập WebSocket
   useEffect(() => {
-    // Kết nối socket khi component mount
     socket.on("connect", () => {
       console.log("Connected to WebSocket server");
-      // Tham gia room với userId của mình
       socket.emit("join", userInfo?._id);
     });
 
-    // Nhận tin nhắn real-time từ server
     socket.on("receive_message", (message) => {
-      setMessages((prevMessages) => [...prevMessages, message]);
+      console.log("Received message from WebSocket:", message); // Debug dữ liệu
+      setMessages((prevMessages) => {
+        // Tránh trùng lặp tin nhắn
+        if (!prevMessages.some((msg) => msg._id === message._id)) {
+          return [...prevMessages, message];
+        }
+        return prevMessages;
+      });
       scrollToBottom();
     });
 
-    // Cleanup khi component unmount
     return () => {
       socket.off("receive_message");
       socket.off("connect");
@@ -86,7 +88,7 @@ const MessagePage = () => {
   const handleSelectUser = (userId) => {
     console.log("Selected user ID:", userId);
     setSelectedUser(userId);
-    setMessages([]); // Reset tin nhắn khi chọn user mới
+    // Không reset messages ở đây, để Redux tự đồng bộ
   };
 
   const handleSendMessage = () => {
@@ -101,12 +103,10 @@ const MessagePage = () => {
       senderId: userInfo._id,
       receiverId: targetId,
       message: newMessage,
+      createdAt: new Date(), // Thêm thời gian gửi
     };
 
-    // Gửi tin nhắn qua WebSocket
     socket.emit("send_message", messageData);
-
-    // Đồng thời gửi qua Redux để lưu vào DB (nếu cần)
     dispatch(sendMessageAction(targetId, newMessage)).then(() => {
       setNewMessage("");
       setShowEmojiPicker(false);
@@ -171,23 +171,36 @@ const MessagePage = () => {
             ) : messages.length > 0 ? (
               messages.map((data) => (
                 <div
-                  key={data._id || `${data.senderId}-${Date.now()}`} // Key tạm nếu không có _id từ real-time
+                  key={data._id || `${data.senderId}-${data.createdAt}`} // Key duy nhất
                   className={`flex ${
-                    data.senderId === userInfo._id
+                    (typeof data.senderId === "object"
+                      ? data.senderId._id
+                      : data.senderId) === userInfo._id
                       ? "justify-end"
                       : "justify-start"
                   } mb-4`}
                 >
                   <div className="flex items-start max-w-[70%]">
                     <img
-                      src={data.senderId.image || "/default-avatar.png"}
-                      alt={data.senderId.fullName || "User"}
+                      src={
+                        typeof data.senderId === "object" && data.senderId.image
+                          ? data.senderId.image
+                          : "/default-avatar.png"
+                      }
+                      alt={
+                        typeof data.senderId === "object" &&
+                        data.senderId.fullName
+                          ? data.senderId.fullName
+                          : "User"
+                      }
                       className="w-8 h-8 rounded-full object-cover mr-2 mt-1"
                     />
                     <div>
                       <div
                         className={`p-3 rounded-lg ${
-                          data.senderId === userInfo._id
+                          (typeof data.senderId === "object"
+                            ? data.senderId._id
+                            : data.senderId) === userInfo._id
                             ? "bg-blue-500 text-white"
                             : "bg-gray-600 text-white"
                         }`}
