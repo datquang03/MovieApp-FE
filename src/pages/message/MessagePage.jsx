@@ -9,6 +9,7 @@ import {
 import Sidebar from "../../dashboard/Sidebar";
 import { FaPaperPlane, FaSmile } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
+import { getAllUsersAction } from "../../../redux/action/user.action";
 
 const MessagePage = () => {
   const [newMessage, setNewMessage] = useState("");
@@ -17,6 +18,7 @@ const MessagePage = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
+
   const {
     isLoading: adminLoading,
     isError: adminError,
@@ -31,6 +33,7 @@ const MessagePage = () => {
   useEffect(() => {
     if (userInfo?.isAdmin) {
       dispatch(getAllMessagesForAdminAction());
+      dispatch(getAllUsersAction());
     } else if (id) {
       dispatch(getMessagesByIdAction(id));
     }
