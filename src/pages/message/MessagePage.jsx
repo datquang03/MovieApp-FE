@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
@@ -9,18 +9,26 @@ import { getAllUsersAction } from "../../../redux/action/user.action";
 import Sidebar from "../../dashboard/Sidebar";
 import { FaPaperPlane, FaSmile } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
+import io from "socket.io-client";
+
+// Khởi tạo kết nối WebSocket
+const socket = io("http://localhost:5000", {
+  reconnection: true, // Tự động kết nối lại nếu mất kết nối
+});
 
 const MessagePage = () => {
   const [newMessage, setNewMessage] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [messages, setMessages] = useState([]); // Quản lý tin nhắn local (Redux + real-time)
+  const messagesEndRef = useRef(null); // Để tự động cuộn xuống tin nhắn mới nhất
   const { id } = useParams();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
   const {
     isLoading,
     isError,
-    messages = [],
+    messages: reduxMessages = [],
   } = useSelector((state) => state.getMessageById);
   const {
     isLoading: usersLoading,
@@ -28,23 +36,57 @@ const MessagePage = () => {
     users = [],
   } = useSelector((state) => state.adminGetAllUsers);
 
+  // Tự động cuộn xuống tin nhắn mới nhất
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Lấy tin nhắn ban đầu từ Redux
   useEffect(() => {
     if (userInfo?.isAdmin) {
-      dispatch(getAllUsersAction()); // Chỉ lấy danh sách user khi vào trang
+      dispatch(getAllUsersAction());
     } else if (id) {
-      dispatch(getMessagesByIdAction(id)); // Cho user thường
+      dispatch(getMessagesByIdAction(id));
     }
   }, [dispatch, id, userInfo]);
 
   useEffect(() => {
     if (userInfo?.isAdmin && selectedUser) {
-      dispatch(getMessagesByIdAction(selectedUser)); // Lấy tin nhắn khi chọn user
+      dispatch(getMessagesByIdAction(selectedUser));
     }
   }, [dispatch, selectedUser, userInfo]);
+
+  // Đồng bộ tin nhắn từ Redux với state local
+  useEffect(() => {
+    setMessages(reduxMessages);
+  }, [reduxMessages]);
+
+  // Thiết lập WebSocket
+  useEffect(() => {
+    // Kết nối socket khi component mount
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket server");
+      // Tham gia room với userId của mình
+      socket.emit("join", userInfo?._id);
+    });
+
+    // Nhận tin nhắn real-time từ server
+    socket.on("receive_message", (message) => {
+      setMessages((prevMessages) => [...prevMessages, message]);
+      scrollToBottom();
+    });
+
+    // Cleanup khi component unmount
+    return () => {
+      socket.off("receive_message");
+      socket.off("connect");
+    };
+  }, [userInfo]);
 
   const handleSelectUser = (userId) => {
     console.log("Selected user ID:", userId);
     setSelectedUser(userId);
+    setMessages([]); // Reset tin nhắn khi chọn user mới
   };
 
   const handleSendMessage = () => {
@@ -54,10 +96,21 @@ const MessagePage = () => {
       console.log("No target user selected");
       return;
     }
+
+    const messageData = {
+      senderId: userInfo._id,
+      receiverId: targetId,
+      message: newMessage,
+    };
+
+    // Gửi tin nhắn qua WebSocket
+    socket.emit("send_message", messageData);
+
+    // Đồng thời gửi qua Redux để lưu vào DB (nếu cần)
     dispatch(sendMessageAction(targetId, newMessage)).then(() => {
-      dispatch(getMessagesByIdAction(targetId));
       setNewMessage("");
       setShowEmojiPicker(false);
+      scrollToBottom();
     });
   };
 
@@ -118,9 +171,9 @@ const MessagePage = () => {
             ) : messages.length > 0 ? (
               messages.map((data) => (
                 <div
-                  key={data._id}
+                  key={data._id || `${data.senderId}-${Date.now()}`} // Key tạm nếu không có _id từ real-time
                   className={`flex ${
-                    data.senderId._id === userInfo._id
+                    data.senderId === userInfo._id
                       ? "justify-end"
                       : "justify-start"
                   } mb-4`}
@@ -134,7 +187,7 @@ const MessagePage = () => {
                     <div>
                       <div
                         className={`p-3 rounded-lg ${
-                          data.senderId._id === userInfo._id
+                          data.senderId === userInfo._id
                             ? "bg-blue-500 text-white"
                             : "bg-gray-600 text-white"
                         }`}
@@ -142,7 +195,7 @@ const MessagePage = () => {
                         <p>{data.message}</p>
                       </div>
                       <p className="text-xs text-gray-400 mt-1 text-right">
-                        {formatTime(data.createdAt)}
+                        {formatTime(data.createdAt || Date.now())}
                       </p>
                     </div>
                   </div>
@@ -151,6 +204,7 @@ const MessagePage = () => {
             ) : (
               <p className="text-white text-center">No messages found</p>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="mt-4 flex items-center relative">
