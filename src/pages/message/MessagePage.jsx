@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import {
-  getAllMessagesForAdminAction,
   getMessagesByIdAction,
   sendMessageAction,
 } from "../../../redux/action/message.action";
@@ -19,11 +18,6 @@ const MessagePage = () => {
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
   const {
-    isLoading: adminLoading,
-    isError: adminError,
-    messages: adminMessages = [],
-  } = useSelector((state) => state.getMessageForAdmin) || {};
-  const {
     isLoading,
     isError,
     messages = [],
@@ -36,25 +30,26 @@ const MessagePage = () => {
 
   useEffect(() => {
     if (userInfo?.isAdmin) {
-      dispatch(getAllMessagesForAdminAction());
-      dispatch(getAllUsersAction());
-      if (selectedUser) {
-        dispatch(getMessagesByIdAction(selectedUser)); // Tự động lấy tin nhắn khi selectedUser thay đổi
-      }
+      dispatch(getAllUsersAction()); // Chỉ lấy danh sách user khi vào trang
     } else if (id) {
       dispatch(getMessagesByIdAction(id)); // Cho user thường
     }
-  }, [dispatch, id, userInfo, selectedUser]); // Thêm selectedUser vào dependency
+  }, [dispatch, id, userInfo]);
+
+  useEffect(() => {
+    if (userInfo?.isAdmin && selectedUser) {
+      dispatch(getMessagesByIdAction(selectedUser)); // Lấy tin nhắn khi chọn user
+    }
+  }, [dispatch, selectedUser, userInfo]);
 
   const handleSelectUser = (userId) => {
     console.log("Selected user ID:", userId);
     setSelectedUser(userId);
-    dispatch(getMessagesByIdAction(userId));
   };
 
   const handleSendMessage = () => {
     if (newMessage.trim() === "") return;
-    const targetId = userInfo?.isAdmin ? selectedUser : id; // Admin dùng selectedUser, user thường dùng id
+    const targetId = userInfo?.isAdmin ? selectedUser : id;
     if (!targetId) {
       console.log("No target user selected");
       return;
@@ -80,9 +75,6 @@ const MessagePage = () => {
       minute: "2-digit",
     });
   };
-
-  const allMessages =
-    userInfo?.isAdmin && !selectedUser ? adminMessages : messages;
 
   const filteredUsers = users.filter((user) => user._id !== userInfo?._id);
 
@@ -115,14 +107,16 @@ const MessagePage = () => {
         <div className="flex-1 flex flex-col gap-6 p-4">
           <h2 className="text-xl font-bold text-white">Messages</h2>
           <div className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] p-4 bg-gray-800 rounded-lg">
-            {isLoading || adminLoading ? (
+            {isLoading ? (
               <p className="text-white text-center">Loading...</p>
-            ) : isError || adminError ? (
-              <p className="text-red-500 text-center">
-                {isError || adminError}
+            ) : isError ? (
+              <p className="text-red-500 text-center">{isError}</p>
+            ) : userInfo?.isAdmin && !selectedUser ? (
+              <p className="text-white text-center">
+                Select a user to start chatting
               </p>
-            ) : allMessages.length > 0 ? (
-              allMessages.map((data) => (
+            ) : messages.length > 0 ? (
+              messages.map((data) => (
                 <div
                   key={data._id}
                   className={`flex ${
