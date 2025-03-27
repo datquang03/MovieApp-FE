@@ -6,10 +6,10 @@ import {
   getMessagesByIdAction,
   sendMessageAction,
 } from "../../../redux/action/message.action";
+import { getAllUsersAction } from "../../../redux/action/user.action";
 import Sidebar from "../../dashboard/Sidebar";
 import { FaPaperPlane, FaSmile } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
-import { getAllUsersAction } from "../../../redux/action/user.action";
 
 const MessagePage = () => {
   const [newMessage, setNewMessage] = useState("");
@@ -18,7 +18,6 @@ const MessagePage = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
-
   const {
     isLoading: adminLoading,
     isError: adminError,
@@ -29,6 +28,11 @@ const MessagePage = () => {
     isError,
     messages = [],
   } = useSelector((state) => state.getMessageById);
+  const {
+    isLoading: usersLoading,
+    isError: usersError,
+    users = [],
+  } = useSelector((state) => state.adminGetAllUsers); // Thêm selector cho users
 
   useEffect(() => {
     if (userInfo?.isAdmin) {
@@ -76,13 +80,8 @@ const MessagePage = () => {
   const allMessages =
     userInfo?.isAdmin && !selectedUser ? adminMessages : messages;
 
-  const filteredUsers = [
-    ...new Set(
-      adminMessages
-        .filter((msg) => msg.senderId._id !== userInfo?._id)
-        .map((msg) => msg.senderId._id)
-    ),
-  ];
+  // Lọc user, loại bỏ admin hiện tại
+  const filteredUsers = users.filter((user) => user._id !== userInfo?._id);
 
   return (
     <Sidebar>
@@ -90,21 +89,20 @@ const MessagePage = () => {
         {userInfo?.isAdmin && (
           <div className="w-1/3 bg-gray-800 p-4 overflow-y-auto">
             <h2 className="text-xl font-bold text-white mb-4">Users</h2>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((userId) => {
-                const user = adminMessages.find(
-                  (msg) => msg.senderId._id === userId
-                ).senderId;
-                return (
-                  <div
-                    key={user._id}
-                    className="p-3 cursor-pointer bg-gray-700 text-white rounded-lg mb-2 hover:bg-gray-600 transition-colors"
-                    onClick={() => handleSelectUser(user._id)}
-                  >
-                    {user.fullName || "Unknown User"}
-                  </div>
-                );
-              })
+            {usersLoading ? (
+              <p className="text-white">Loading users...</p>
+            ) : usersError ? (
+              <p className="text-red-500">{usersError}</p>
+            ) : filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <div
+                  key={user._id}
+                  className="p-3 cursor-pointer bg-gray-700 text-white rounded-lg mb-2 hover:bg-gray-600 transition-colors"
+                  onClick={() => handleSelectUser(user._id)}
+                >
+                  {user.fullName || "Unknown User"}
+                </div>
+              ))
             ) : (
               <p className="text-white">No users found</p>
             )}
