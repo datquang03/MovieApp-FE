@@ -82,6 +82,7 @@ const App = () => {
             <Route path="/favorites" element={<FavoriteMovies />} />
             <Route path="/password" element={<ChangePassword />} />
             <Route path="/message/:id" element={<MessagePage />} />
+            <Route path="/message" element={<MessagePage />} />
           </Route>
           {/* Admin Routes */}
           <Route element={<AdminProtectedRouter />}>
