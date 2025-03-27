@@ -21,7 +21,7 @@ const MessagePage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messages, setMessages] = useState([]);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null); // Ref cho box tin nhắn
   const { id } = useParams();
   const dispatch = useDispatch();
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -36,10 +36,15 @@ const MessagePage = () => {
     users = [],
   } = useSelector((state) => state.adminGetAllUsers);
 
+  // Cuộn xuống dưới trong box tin nhắn
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight; // Cuộn xuống dưới trong container
+    }
   };
 
+  // Lấy tin nhắn ban đầu từ Redux
   useEffect(() => {
     if (userInfo?.isAdmin) {
       dispatch(getAllUsersAction());
@@ -54,10 +59,10 @@ const MessagePage = () => {
     }
   }, [dispatch, selectedUser, userInfo]);
 
-  // Đồng bộ tin nhắn từ Redux
+  // Đồng bộ tin nhắn từ Redux (không cuộn tự động)
   useEffect(() => {
     setMessages(reduxMessages);
-    scrollToBottom();
+    // Không gọi scrollToBottom ở đây để tránh cuộn khi vào trang
   }, [reduxMessages]);
 
   // Thiết lập WebSocket
@@ -68,15 +73,14 @@ const MessagePage = () => {
     });
 
     socket.on("receive_message", (message) => {
-      console.log("Received message from WebSocket:", message); // Debug dữ liệu
+      console.log("Received message from WebSocket:", message);
       setMessages((prevMessages) => {
-        // Tránh trùng lặp tin nhắn
         if (!prevMessages.some((msg) => msg._id === message._id)) {
           return [...prevMessages, message];
         }
         return prevMessages;
       });
-      scrollToBottom();
+      scrollToBottom(); // Chỉ cuộn khi nhận tin nhắn mới
     });
 
     return () => {
@@ -88,7 +92,7 @@ const MessagePage = () => {
   const handleSelectUser = (userId) => {
     console.log("Selected user ID:", userId);
     setSelectedUser(userId);
-    // Không reset messages ở đây, để Redux tự đồng bộ
+    // Không reset messages, để Redux đồng bộ
   };
 
   const handleSendMessage = () => {
@@ -103,14 +107,14 @@ const MessagePage = () => {
       senderId: userInfo._id,
       receiverId: targetId,
       message: newMessage,
-      createdAt: new Date(), // Thêm thời gian gửi
+      createdAt: new Date(),
     };
 
     socket.emit("send_message", messageData);
     dispatch(sendMessageAction(targetId, newMessage)).then(() => {
       setNewMessage("");
       setShowEmojiPicker(false);
-      scrollToBottom();
+      scrollToBottom(); // Chỉ cuộn khi gửi tin nhắn
     });
   };
 
@@ -159,7 +163,10 @@ const MessagePage = () => {
 
         <div className="flex-1 flex flex-col gap-6 p-4">
           <h2 className="text-xl font-bold text-white">Messages</h2>
-          <div className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] p-4 bg-gray-800 rounded-lg">
+          <div
+            ref={messagesContainerRef} // Gán ref cho box tin nhắn
+            className="flex-1 overflow-y-auto max-h-[calc(100vh-200px)] p-4 bg-gray-800 rounded-lg"
+          >
             {isLoading ? (
               <p className="text-white text-center">Loading...</p>
             ) : isError ? (
@@ -171,7 +178,7 @@ const MessagePage = () => {
             ) : messages.length > 0 ? (
               messages.map((data) => (
                 <div
-                  key={data._id || `${data.senderId}-${data.createdAt}`} // Key duy nhất
+                  key={data._id || `${data.senderId}-${data.createdAt}`}
                   className={`flex ${
                     (typeof data.senderId === "object"
                       ? data.senderId._id
@@ -217,7 +224,6 @@ const MessagePage = () => {
             ) : (
               <p className="text-white text-center">No messages found</p>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           <div className="mt-4 flex items-center relative">
