@@ -31,6 +31,7 @@ const languageData = [
   { title: "Vietnamese" },
   { title: "Korean" },
   { title: "Indian" },
+  { title: "Japanese" },
   { title: "Chinese" },
 ];
 
